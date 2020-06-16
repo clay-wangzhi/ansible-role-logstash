@@ -1,0 +1,85 @@
+---
+- name: Create Logstash configuration files.
+  template:
+    src: "{{ item }}.j2"
+    dest: "/etc/logstash/conf.d/{{ item }}"
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+    - clay-k8s.conf
+  notify: restart logstash
+
+#- name: Create Logstash filters.
+#  copy:
+#    src: "filters/{{ item }}"
+#    dest: "/etc/logstash/conf.d/{{ item }}"
+#    owner: root
+#    group: root
+#    mode: 0644
+#  with_items:
+#    - 10-syslog.conf
+#  notify: restart logstash
+
+#- name: Create Logstash configuration file for local syslog.
+#  template:
+#    src: 02-local-syslog-input.conf.j2
+#    dest: /etc/logstash/conf.d/02-local-syslog-input.conf
+#    owner: root
+#    group: root
+#    mode: 0644
+#  when: logstash_monitor_local_syslog
+#  notify: restart logstash
+- name: Config jvm Xms.
+  lineinfile:
+    path: /etc/logstash/jvm.options 
+    regexp: '^-Xms1g'
+    line: '-Xms6g'
+  notify: restart logstash
+
+- name: Config jvm Xmx.
+  lineinfile:
+    path: /etc/logstash/jvm.options 
+    regexp: '^-Xmx1g'
+    line: '-Xmx6g'
+  notify: restart logstash
+
+- name: Config logstash yml.
+  template:
+    src: logstash.yml.j2
+    dest: /etc/logstash/logstash.yml
+  notify: restart logstash
+#- name: Config logstash xpack monitoring enabled.
+#  lineinfile:
+#    path: /etc/logstash/logstash.yml
+#    regexp: '^#xpack.monitoring.enabled'
+#    line: 'xpack.monitoring.enabled: true'
+#  notify: restart logstash
+#
+#- name: Config logstash xpack monitoring username.
+#  lineinfile:
+#    path: /etc/logstash/logstash.yml
+#    regexp: '^#xpack.monitoring.elasticsearch.username'
+#    line: 'xpack.monitoring.elasticsearch.username: {{ es_user }}'
+#  notify: restart logstash
+#
+#- name: Config logstash xpack monitoring password.
+#  lineinfile:
+#    path: /etc/logstash/logstash.yml
+#    regexp: '^#xpack.monitoring.elasticsearch.password'
+#    line: 'xpack.monitoring.elasticsearch.password: {{ es_pass }}'
+#  notify: restart logstash
+#
+#- name: Config logstash xpack monitoring hosts.
+#  lineinfile:
+#    path: /etc/logstash/logstash.yml
+#    regexp: '^#xpack.monitoring.elasticsearch.hosts'
+#    line: 'xpack.monitoring.elasticsearch.hosts: {{ logstash_elasticsearch_hosts }}'
+#  notify: restart logstash
+
+- name: Ensure configuration for local syslog is absent if disabled.
+  file:
+    path: /etc/logstash/conf.d/02-local-syslog-input.conf
+    state: absent
+  when: not logstash_monitor_local_syslog
+  notify: restart logstash

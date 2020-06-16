@@ -1,0 +1,15 @@
+- name: Add Logstash repository.
+  template:
+    src: logstash.repo.j2
+    dest: /etc/yum.repos.d/logstash.repo
+    mode: 0644
+
+- name: Install Java.
+  package:
+    name: java-11-openjdk
+    state: present
+
+- name: Install Logstash.
+  package:
+    name: logstash
+    state: present

@@ -1,0 +1,33 @@
+input {
+  kafka {
+    bootstrap_servers => ["192.168.165.220:9092,192.168.165.221:9092,192.168.165.222:9092"]
+    topics => ["clay-k8s-bes"]
+    group_id => "suncar"
+    auto_offset_reset => "earliest"
+    consumer_threads => 5
+    decorate_events => false
+    codec => json
+    #codec => plain
+  }
+}
+filter {
+  if [topic] == "clay-k8s-bes" {
+    grok {
+      match => { "message" => "(?<jartime>[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2})" }
+    }
+    date {
+      match => [ "[jartime]", "YYYY-MM-dd HH:mm:ss" ]
+      remove_field => "[jartime]"
+    }
+  }
+}
+output {
+  if [topic] == "clay-k8s-bes" {
+    elasticsearch {
+      hosts => {{ logstash_elasticsearch_hosts }}
+      user => "{{ es_user }}"
+      password => "{{ es_pass }}"
+      index => "%{[index]}-%{+YYYY.MM.dd}"
+    }
+  }
+}
