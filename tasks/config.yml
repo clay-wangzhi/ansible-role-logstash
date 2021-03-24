@@ -7,7 +7,7 @@
     group: root
     mode: 0644
   with_items:
-    - clay-k8s.conf
+    - logstash.pipline.conf
   notify: restart logstash
 
 #- name: Create Logstash filters.
