@@ -1,5 +1,6 @@
 ---
 logstash_version: '7.x'
+logstash_dversion: '7.8.0'
 
 logstash_listen_port_beats: 5044
 

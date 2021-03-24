@@ -1,0 +1,45 @@
+input {
+{% if groups['kafka'] %}
+    kafka {
+        bootstrap_servers => "{{hostvars[groups['kafka'][0]].ansible_host}}:9092{% for host in groups['kafka'][1:] %},{{hostvars[host].ansible_host}}:9092{% endfor %}"
+        topics => ["{{kafka_topic}}"]
+        group_id => "{{kafka_group_id}}"
+        auto_offset_reset => "earliest"
+        consumer_threads => 5
+        decorate_events => false
+        codec => json {
+            charset => "UTF-8"
+        }
+    }
+{% else %}
+    beats {
+        port => "5044"
+        codec => json {
+            charset => "UTF-8"
+        }
+    }
+{% endif %}
+}
+
+filter {
+  if [fields][type] == "h5-jar" {
+    grok {
+      match => { "message" => "(?<jartime>[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{3})" }
+    }
+    date {
+      match => [ "[jartime]", "YYYY-MM-dd HH:mm:ss.SSS" ]
+      remove_field => "[jartime]"
+    }
+  }
+}
+output {
+    # stdout { codec => rubydebug { metadata => true } }
+    if [fields][type] == "h5-jar" {
+        elasticsearch {
+            hosts => ["{{hostvars[groups['es_ingest'][0]].ansible_host}}:9200"{% for host in groups['es_ingest'][1:] %}, "{{hostvars[host].ansible_host}}:9200"{% endfor %}]
+            user => "{{ es_user }}"
+            password => "{{ es_pass }}"
+            index => "%{[fields][service_name]}-%{+YYYY.MM.dd}"
+        }
+    }
+}
