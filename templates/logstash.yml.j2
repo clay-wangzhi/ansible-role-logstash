@@ -6,5 +6,6 @@ path.logs: /var/log/logstash
 xpack.monitoring.enabled: true
 xpack.monitoring.elasticsearch.username: {{ es_user }}
 xpack.monitoring.elasticsearch.password: {{ es_pass }}
-xpack.monitoring.elasticsearch.hosts: {{ logstash_elasticsearch_hosts }}
+xpack.monitoring.elasticsearch.hosts:
+{{ logstash_elasticsearch_hosts | to_nice_yaml(indent=2) }}
 
